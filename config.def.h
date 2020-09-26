@@ -6,21 +6,22 @@ static const unsigned int gappx     = 10;       /* gap pixel between windows */
 static const unsigned int snap      = 32;       /* snap pixel */
 static const int showbar            = 1;        /* 0 means no bar */
 static const int topbar             = 1;        /* 0 means bottom bar */
-static const int xbar               = 10;        /* horizontal offset for statusbar */
-static const int ybar               = 10;        /* vertical offset for statusbar */
+static const int xbar               = 10;       /* horizontal offset for statusbar */
+static const int ybar               = 10;       /* vertical offset for statusbar */
 static const int horizpadbar        = 2;        /* horizontal padding for statusbar */
 static const int vertpadbar         = 4;        /* vertical padding for statusbar */
 static const char *fonts[]          = { "monospace:size=10" };
 static const char dmenufont[]       = "monospace:size=10";
-static const char col_gray1[]       = "#222222";
-static const char col_gray2[]       = "#444444";
-static const char col_gray3[]       = "#bbbbbb";
-static const char col_gray4[]       = "#eeeeee";
-static const char col_cyan[]        = "#005577";
+static const char col_bg[]          = "#282828";
+static const char col_fg[]          = "#ebdbb2";
+static const char col_hl[]          = "#d79921";
+static const char col_lt[]          = "#3c3836";
 static const char *colors[][3]      = {
-	/*               fg         bg         border   */
-	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
-	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
+	/*               fg        bg      border   */
+	[SchemeNorm]   = { col_fg, col_bg, col_bg }, /* 1: normal */
+	[SchemeSelTag] = { col_bg, col_hl, col_bg }, /* 2: selected tag*/
+	[SchemeSelWin] = { col_hl, col_bg, col_hl }, /* 3: selected window */
+	[SchemeLight]  = { col_fg, col_lt, col_bg }, /* 4: light */
 };
 
 /* tagging */
