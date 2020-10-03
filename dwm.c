@@ -738,7 +738,7 @@ drawbar(Monitor *m)
 			}
 			ctmp = *ts;
 			*ts = '\0';
-			drw_text(drw, m->ww - tw + tx - 2 * xbar, 0, tw - tx, bh, 0, tp, 0);
+			drw_text(drw, m->ww - tw + tx - xbar, 0, tw - tx, bh, 0, tp, 0);
 			tx += TEXTW(tp) - lrpad;
 			if (ctmp == '\0')
 				break;
