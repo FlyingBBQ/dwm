@@ -1,0 +1,188 @@
+diff --git a/config.def.h b/config.def.h
+index 5a30dfb..914cc01 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -6,21 +6,22 @@ static const unsigned int gappx     = 10;       /* gap pixel between windows */
+ static const unsigned int snap      = 32;       /* snap pixel */
+ static const int showbar            = 1;        /* 0 means no bar */
+ static const int topbar             = 1;        /* 0 means bottom bar */
+-static const int xbar               = 10;        /* horizontal offset for statusbar */
+-static const int ybar               = 10;        /* vertical offset for statusbar */
++static const int xbar               = 10;       /* horizontal offset for statusbar */
++static const int ybar               = 10;       /* vertical offset for statusbar */
+ static const int horizpadbar        = 2;        /* horizontal padding for statusbar */
+ static const int vertpadbar         = 4;        /* vertical padding for statusbar */
+ static const char *fonts[]          = { "monospace:size=10" };
+ static const char dmenufont[]       = "monospace:size=10";
+-static const char col_gray1[]       = "#222222";
+-static const char col_gray2[]       = "#444444";
+-static const char col_gray3[]       = "#bbbbbb";
+-static const char col_gray4[]       = "#eeeeee";
+-static const char col_cyan[]        = "#005577";
++static const char col_bg[]          = "#282828";
++static const char col_fg[]          = "#ebdbb2";
++static const char col_hl[]          = "#d79921";
++static const char col_lt[]          = "#3c3836";
+ static const char *colors[][3]      = {
+-	/*               fg         bg         border   */
+-	[SchemeNorm] = { col_gray3, col_gray1, col_gray2 },
+-	[SchemeSel]  = { col_gray4, col_cyan,  col_cyan  },
++	/*               fg        bg      border   */
++	[SchemeNorm]   = { col_fg, col_bg, col_bg }, /* 1: normal */
++	[SchemeSelTag] = { col_bg, col_hl, col_bg }, /* 2: selected tag*/
++	[SchemeSelWin] = { col_hl, col_bg, col_hl }, /* 3: selected window */
++	[SchemeLight]  = { col_fg, col_lt, col_bg }, /* 4: light */
+ };
+ 
+ /* tagging */
+diff --git a/drw.c b/drw.c
+index 4cdbcbe..a405d69 100644
+--- a/drw.c
++++ b/drw.c
+@@ -236,6 +236,61 @@ drw_setscheme(Drw *drw, Clr *scm)
+ 		drw->scheme = scm;
+ }
+ 
++int
++drw_get_width(Drw *drw, int numcolors, const char *text)
++{
++    int i;
++    Fnt *curfont = drw->fonts;
++    int w = drw_fontset_getwidth(drw, text);
++
++    for (i = 0; i < strlen(text); i++) {
++        if (text[i] == '#') {
++            /* color code, -length of 2 characters */
++            w -= (2 * curfont->xfont->max_advance_width);
++            /* skip 2 characters */
++            i += 1;
++        }
++        /* no checks for first or last character */
++    }
++    return w;
++}
++
++void
++drw_colored_text(Drw *drw, Clr **scheme, int numcolors, int x, int y, unsigned int w, unsigned int h, char *text)
++{
++	if (!drw || !drw->fonts || !drw->scheme)
++		return;
++
++	char *buf = text, *ptr = text, c = 1;
++	char outbuf[32] = { 0 }; /* this buffer is written with drw_txt() */
++	int i;
++
++	for (i = 0; *ptr; i++, ptr++) {
++		if (*ptr == '\0' || *ptr == '\n')
++			break;
++
++		/* '#' is the separator */
++		if (ptr[0] == '#') {
++			c = ptr[1] - '0'; /* get the color */
++
++			strncpy(outbuf, buf, i);
++			w = drw_fontset_getwidth(drw, outbuf);
++			x = drw_text(drw, x, y, w, h, 0, outbuf, 0);
++
++			/* color code is 2 characters so move 2 */
++			ptr += 2;
++			buf = ptr;
++			i = 0; /* reset length of buffer */
++
++			drw_setscheme(drw, scheme[c-1]);
++		}
++		memset(outbuf, 0, sizeof(outbuf));
++	}
++	/* draw remaining part of buffer */
++	w = drw_fontset_getwidth(drw, buf);
++	drw_text(drw, x, y, w, h, 0, buf, 0);
++}
++
+ void
+ drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert)
+ {
+diff --git a/drw.h b/drw.h
+index 4bcd5ad..518d404 100644
+--- a/drw.h
++++ b/drw.h
+@@ -50,6 +50,8 @@ void drw_setfontset(Drw *drw, Fnt *set);
+ void drw_setscheme(Drw *drw, Clr *scm);
+ 
+ /* Drawing functions */
++int drw_get_width(Drw *, int, const char *);
++void drw_colored_text(Drw *, Clr **, int, int, int, unsigned int, unsigned int, char *);
+ void drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert);
+ int drw_text(Drw *drw, int x, int y, unsigned int w, unsigned int h, unsigned int lpad, const char *text, int invert);
+ 
+diff --git a/dwm.c b/dwm.c
+index c9765c2..c969158 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -59,7 +59,7 @@
+ 
+ /* enums */
+ enum { CurNormal, CurResize, CurMove, CurLast }; /* cursor */
+-enum { SchemeNorm, SchemeSel }; /* color schemes */
++enum { SchemeNorm, SchemeSelTag, SchemeSelWin, SchemeLight }; /* color schemes */
+ enum { NetSupported, NetWMName, NetWMState, NetWMCheck,
+        NetWMFullscreen, NetActiveWindow, NetWMWindowType,
+        NetWMWindowTypeDialog, NetClientList, NetLast }; /* EWMH atoms */
+@@ -705,8 +705,8 @@ drawbar(Monitor *m)
+ 	/* draw status first so it can be overdrawn by tags later */
+ 	if (m == selmon) { /* status is only drawn on selected monitor */
+ 		drw_setscheme(drw, scheme[SchemeNorm]);
+-		tw = TEXTW(stext);
+-		drw_text(drw, m->ww - tw - 2 * xbar, 0, tw, bh, lrpad / 2, stext, 0);
++		tw = drw_get_width(drw, LENGTH(colors), stext);
++		drw_colored_text(drw, scheme, LENGTH(colors), m->ww - tw - (2 * xbar), 0, tw, bh, stext);
+ 	}
+ 
+ 	for (c = m->clients; c; c = c->next) {
+@@ -717,7 +717,7 @@ drawbar(Monitor *m)
+ 	x = 0;
+ 	for (i = 0; i < LENGTH(tags); i++) {
+ 		w = TEXTW(tags[i]);
+-		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSel : SchemeNorm]);
++		drw_setscheme(drw, scheme[m->tagset[m->seltags] & 1 << i ? SchemeSelTag : SchemeNorm]);
+ 		drw_text(drw, x, 0, w, bh, lrpad / 2, tags[i], urg & 1 << i);
+ 		if (occ & 1 << i)
+ 			drw_rect(drw, x + boxs, boxs, boxw, boxw,
+@@ -726,12 +726,12 @@ drawbar(Monitor *m)
+ 		x += w;
+ 	}
+ 	w = blw = TEXTW(m->ltsymbol);
+-	drw_setscheme(drw, scheme[SchemeNorm]);
++	drw_setscheme(drw, scheme[SchemeLight]);
+ 	x = drw_text(drw, x, 0, w, bh, lrpad / 2, m->ltsymbol, 0);
+ 
+ 	if ((w = m->ww - tw - x) > bh) {
+ 		if (m->sel) {
+-			drw_setscheme(drw, scheme[m == selmon ? SchemeSel : SchemeNorm]);
++			drw_setscheme(drw, scheme[m == selmon ? SchemeSelWin : SchemeNorm]);
+ 			drw_text(drw, x, 0, w - 2 * xbar, bh, lrpad / 2, m->sel->name, 0);
+ 			if (m->sel->isfloating)
+ 				drw_rect(drw, x + boxs, boxs, boxw, boxw, m->sel->isfixed, 0);
+@@ -796,7 +796,7 @@ focus(Client *c)
+ 		detachstack(c);
+ 		attachstack(c);
+ 		grabbuttons(c, 1);
+-		XSetWindowBorder(dpy, c->win, scheme[SchemeSel][ColBorder].pixel);
++		XSetWindowBorder(dpy, c->win, scheme[SchemeSelWin][ColBorder].pixel);
+ 		setfocus(c);
+ 	} else {
+ 		XSetInputFocus(dpy, root, RevertToPointerRoot, CurrentTime);
+diff --git a/patches/02-statusoffset-6.2.diff b/patches/02-statusoffset-6.2.diff
+index 22153c0..82660ba 100644
+--- a/patches/02-statusoffset-6.2.diff
++++ b/patches/02-statusoffset-6.2.diff
+@@ -6,8 +6,8 @@ index dd8d79a..5a30dfb 100644
+  static const unsigned int snap      = 32;       /* snap pixel */
+  static const int showbar            = 1;        /* 0 means no bar */
+  static const int topbar             = 1;        /* 0 means bottom bar */
+-+static const int xbar               = 10;        /* horizontal offset for statusbar */
+-+static const int ybar               = 10;        /* vertical offset for statusbar */
+++static const int xbar               = 10;       /* horizontal offset for statusbar */
+++static const int ybar               = 10;       /* vertical offset for statusbar */
+  static const int horizpadbar        = 2;        /* horizontal padding for statusbar */
+  static const int vertpadbar         = 4;        /* vertical padding for statusbar */
+  static const char *fonts[]          = { "monospace:size=10" };
