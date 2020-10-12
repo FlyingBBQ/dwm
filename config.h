@@ -13,8 +13,8 @@ static const int xbar               = XBAR;       /* horizontal offset for statu
 static const int ybar               = YBAR;       /* vertical offset for statusbar */
 static const int horizpadbar        = 0;        /* horizontal padding for statusbar */
 static const int vertpadbar         = 12;        /* vertical padding for statusbar */
-static const char *fonts[]          = { "JetBrains Mono:size=11" };
-static const char dmenufont[]       = "JetBrains Mono:size=11";
+static const char *fonts[]          = { "JetBrains Mono:size=10:antialias=true:autohint=false" };
+static const char dmenufont[]       = "JetBrains Mono:size=10:antialias=true:autohint=false";
 static const char col_bg[]          = "#282828";
 static const char col_fg[]          = "#ebdbb2";
 static const char col_hl[]          = "#d79921";
@@ -25,7 +25,7 @@ static const char *colors[][3]      = {
 	[SchemeSelTag] = { col_bg, col_hl, col_bg }, /* 2: selected tag*/
 	[SchemeSelWin] = { col_hl, col_bg, col_hl }, /* 3: selected window */
 	[SchemeLight]  = { col_fg, col_lt, col_bg }, /* 4: light */
-	[4]  = { col_fg, col_lt, col_bg }, /* 5: light */
+	[4]  = { col_hl, col_lt, col_bg }, /* 5: light */
 	[5]  = { col_fg, col_lt, col_bg }, /* 6: light */
 	[6]  = { col_fg, col_lt, col_bg }, /* 7: light */
 	[7]  = { col_fg, col_lt, col_bg }, /* 8: light */
@@ -99,7 +99,7 @@ static Key keys[] = {
 	{ MODKEY,                       XK_grave,  view,           {0} },
 	{ MODKEY|ShiftMask,             XK_q,      killclient,     {0} },
 	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
-	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
+	{ MODKEY,                       XK_s,      setlayout,      {.v = &layouts[1]} },
 	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
 	{ MODKEY,                       XK_space,  setlayout,      {0} },
 	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
