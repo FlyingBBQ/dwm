@@ -78,7 +78,7 @@ static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn() 
 static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont,
                                   "-nb", col_bg, "-nf", col_fg, "-sb", col_hl, "-sf", col_bg,
                                   "-nhb", col_bg, "-nhf", col_hl, "-shb", col_hl, "-shf", col_bg,
-                                  "-h", "31", "-x", STR(XBAR), "-y", STR(YBAR), "-w", "800", NULL };
+                                  "-h", "29", "-x", STR(XBAR), "-y", STR(YBAR), "-w", "824", NULL };
 static const char *termcmd[]  = { "st", NULL };
 
 static Key keys[] = {
