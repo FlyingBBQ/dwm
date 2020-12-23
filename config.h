@@ -15,10 +15,10 @@ static const int horizpadbar        = 0;        /* horizontal padding for status
 static const int vertpadbar         = 12;        /* vertical padding for statusbar */
 static const char *fonts[]          = { "JetBrains Mono:size=10:antialias=true:autohint=false" };
 static const char dmenufont[]       = "JetBrains Mono:size=10:antialias=true:autohint=false";
-static const char col_bg[]          = "#282828";
-static const char col_fg[]          = "#ebdbb2";
-static const char col_hl[]          = "#d79921";
-static const char col_lt[]          = "#3c3836";
+static const char col_bg[]          = "#2b2b2b";
+static const char col_fg[]          = "#bbbbbb";
+static const char col_hl[]          = "#cc7832";
+static const char col_lt[]          = "#323232";
 static const char *colors[][3]      = {
 	/*               fg        bg      border   */
 	[SchemeNorm]   = { col_fg, col_bg, col_bg }, /* 1: normal */
@@ -27,9 +27,6 @@ static const char *colors[][3]      = {
 	[SchemeLight]  = { col_fg, col_lt, col_bg }, /* 4: light */
 	[4]  = { col_hl, col_lt, col_bg }, /* 5: light */
 	[5]  = { col_fg, col_lt, col_bg }, /* 6: light */
-	[6]  = { col_fg, col_lt, col_bg }, /* 7: light */
-	[7]  = { col_fg, col_lt, col_bg }, /* 8: light */
-	[8]  = { col_fg, col_lt, col_bg }, /* 9: light */
 };
 
 /* tagging */
