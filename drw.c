@@ -236,6 +236,61 @@ drw_setscheme(Drw *drw, Clr *scm)
 		drw->scheme = scm;
 }
 
+int
+drw_get_width(Drw *drw, int numcolors, const char *text)
+{
+    int i;
+    Fnt *curfont = drw->fonts;
+    int w = drw_fontset_getwidth(drw, text);
+
+    for (i = 0; i < strlen(text); i++) {
+        if (text[i] == '#') {
+            /* color code, -length of 2 characters */
+            w -= (2 * curfont->xfont->max_advance_width);
+            /* skip 2 characters */
+            i += 1;
+        }
+        /* no checks for first or last character */
+    }
+    return w;
+}
+
+void
+drw_colored_text(Drw *drw, Clr **scheme, int numcolors, int x, int y, unsigned int w, unsigned int h, char *text)
+{
+	if (!drw || !drw->fonts || !drw->scheme)
+		return;
+
+	char *buf = text, *ptr = text, c = 1;
+	char outbuf[32] = { 0 }; /* this buffer is written with drw_txt() */
+	int i;
+
+	for (i = 0; *ptr; i++, ptr++) {
+		if (*ptr == '\0' || *ptr == '\n')
+			break;
+
+		/* '#' is the separator */
+		if (ptr[0] == '#') {
+			c = ptr[1] - '0'; /* get the color */
+
+			strncpy(outbuf, buf, i);
+			w = drw_fontset_getwidth(drw, outbuf);
+			x = drw_text(drw, x, y, w, h, 0, outbuf, 0);
+
+			/* color code is 2 characters so move 2 */
+			ptr += 2;
+			buf = ptr;
+			i = 0; /* reset length of buffer */
+
+			drw_setscheme(drw, scheme[c-1]);
+		}
+		memset(outbuf, 0, sizeof(outbuf));
+	}
+	/* draw remaining part of buffer */
+	w = drw_fontset_getwidth(drw, buf);
+	drw_text(drw, x, y, w, h, 0, buf, 0);
+}
+
 void
 drw_rect(Drw *drw, int x, int y, unsigned int w, unsigned int h, int filled, int invert)
 {
